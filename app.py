@@ -4,7 +4,7 @@ from google.genai import types
 import pandas as pd
 import json
 import io
-from PIL import Image
+import time
 
 # Pengaturan Halaman Web
 st.set_page_config(page_title="AI Admin Copilot", page_icon="🗂️", layout="wide")
@@ -19,6 +19,32 @@ try:
 except Exception:
     st.error("⚠️ API Key Gemini belum dipasang. Silakan masukkan di pengaturan Secrets Streamlit.")
     st.stop()
+
+# Fungsi pintar: otomatis mencoba ulang & pindah model jika server penuh (503)
+def proses_dengan_ai(file_bytes, mime_type, prompt):
+    daftar_model = ["gemini-3.8-flash", "gemini-3.8-pro", "gemini-2.5-flash-lite"]
+    error_terakhir = ""
+    
+    for model_name in daftar_model:
+        for percobaan in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=[
+                        types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                        prompt
+                    ],
+                    config=types.GenerateContentConfig(response_mime_type="application/json")
+                )
+                return json.loads(response.text)
+            except Exception as e:
+                error_terakhir = str(e)
+                if "503" in error_terakhir or "UNAVAILABLE" in error_terakhir:
+                    time.sleep(3)  # Jeda 3 detik lalu coba lagi
+                    continue
+                else:
+                    break  # Jika model tidak ditemukan (404), langsung pindah ke model berikutnya
+    raise Exception(error_terakhir)
 
 # Membuat 2 Tab Menu Utama
 tab1, tab2 = st.tabs(["🧾 Laporan Keuangan (Struk & Invoice)", "📩 Buku Agenda Surat Masuk"])
@@ -53,15 +79,7 @@ with tab1:
                 """
                 
                 try:
-                    response = client.models.generate_content(
-                        model="gemini-3.8-flash-lite",
-                        contents=[
-                            types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
-                            prompt
-                        ],
-                        config=types.GenerateContentConfig(response_mime_type="application/json")
-                    )
-                    data = json.loads(response.text)
+                    data = proses_dengan_ai(file_bytes, mime_type, prompt)
                     data["Nama_File"] = file.name
                     hasil_keuangan.append(data)
                 except Exception as e:
@@ -72,7 +90,6 @@ with tab1:
             st.success("✅ Data berhasil dirapikan!")
             st.dataframe(df, use_container_width=True)
             
-            # Tombol Download Excel
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Laporan_Keuangan')
@@ -114,15 +131,7 @@ with tab2:
                 """
                 
                 try:
-                    response = client.models.generate_content(
-                        model="gemini-3.8-flash-lite",
-                        contents=[
-                            types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
-                            prompt
-                        ],
-                        config=types.GenerateContentConfig(response_mime_type="application/json")
-                    )
-                    data = json.loads(response.text)
+                    data = proses_dengan_ai(file_bytes, mime_type, prompt)
                     data["Nama_File"] = file.name
                     hasil_surat.append(data)
                 except Exception as e:
