@@ -9,14 +9,14 @@ from datetime import datetime
 
 st.set_page_config(page_title="AI Admin Copilot", page_icon="🗂️", layout="centered")
 
-# CSS untuk posisi tengah + Watermark Latar & Badge Pojok
+# CSS untuk layout tengah + Watermark Tepat di Tengah Layar
 st.markdown(
     """
     <style>
     .block-container {
         max-width: 820px;
         padding-top: 2.5rem;
-        padding-bottom: 4rem;
+        padding-bottom: 3rem;
     }
     h1, .subtitle {
         text-align: center;
@@ -25,42 +25,24 @@ st.markdown(
         justify-content: center;
     }
 
-    /* 1. Watermark Latar Belakang Diagonal Tipis */
-    .watermark-bg {
+    /* Watermark Tepat di Tengah Layar */
+    .watermark-center {
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) rotate(-25deg);
-        font-size: 3.2rem;
-        font-weight: 700;
-        color: rgba(128, 128, 128, 0.07);
+        transform: translate(-50%, -50%) rotate(-20deg);
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: rgba(150, 150, 150, 0.14);
+        text-align: center;
         white-space: nowrap;
         pointer-events: none;
         user-select: none;
-        z-index: 0;
-    }
-
-    /* 2. Watermark Badge di Pojok Kanan Bawah */
-    .watermark-badge {
-        position: fixed;
-        bottom: 14px;
-        right: 18px;
-        background-color: rgba(30, 30, 30, 0.75);
-        color: #f0f0f0;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-        letter-spacing: 0.3px;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
         z-index: 9999;
-        pointer-events: none;
     }
     </style>
 
-    <div class="watermark-bg">Dava Iman C. K. • Portfolio</div>
-    <div class="watermark-badge">🗂️ Created by Dava Iman C. K.</div>
+    <div class="watermark-center">Dava Iman C. K. • AI Admin Copilot</div>
     """,
     unsafe_allow_html=True,
 )
