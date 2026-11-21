@@ -20,7 +20,7 @@ except Exception:
 def proses_gambar_dengan_ai(file_bytes, mime_type, prompt):
     base64_image = base64.b64encode(file_bytes).decode("utf-8")
     response = client.chat.completions.create(
-        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        model="qwen/qwen3.8-27b",
         messages=[
             {
                 "role": "user",
