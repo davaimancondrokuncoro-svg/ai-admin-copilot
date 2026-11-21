@@ -1,0 +1,34 @@
+# 🗂️ AI Admin Copilot
+
+**AI Admin Copilot** adalah aplikasi web berbasis *Vision AI* yang dirancang untuk mengotomatisasi pekerjaan administrasi perkantoran—khususnya ekstraksi rincian transaksi keuangan (struk belanja & *invoice*) serta rekapitulasi Buku Agenda Surat Masuk ke dalam format laporan Microsoft Excel (`.xlsx`).
+
+🔗 **Live Demo Aplikasi:** https://ai-app-copilot-68xlmehu8ozbvoetmnruaj.streamlit.app/
+
+---
+
+## 🎯 Latar Belakang Masalah
+Dalam operasional administrasi sehari-hari, pencatatan bukti transaksi kas kecil (*petty cash*), faktur pembelian, dan pengarsipan surat masuk secara manual sering memakan waktu lama serta berisiko menimbulkan kesalahan input (*human error*). 
+
+Berangkat dari pemahaman alur kerja administrasi perkantoran dan pengalaman 4+ tahun di bidang layanan pelanggan perbankan, aplikasi ini dibangun untuk mempercepat proses digitalisasi dokumen fisik menjadi data siap olah.
+
+## ✨ Fitur Utama
+1. **Ekstraksi Rincian Keuangan (*Multi-File & Itemized*):**
+   - Mendukung unggahan banyak foto struk belanja atau faktur sekaligus.
+   - Memecah setiap item belanjaan per baris lengkap dengan tanggal, nama vendor, nomor dokumen, kuantitas, satuan, harga satuan, dan subtotal.
+   - Mengklasifikasikan pos pengeluaran otomatis (*Konsumsi, ATK, Transportasi, Operasional, Lainnya*).
+2. **Rekapitulasi Buku Agenda Surat Masuk:**
+   - Mencatat Nomor Agenda, Tanggal Terima, Tanggal Surat, Nomor Surat, Pengirim, Perihal, dan Sifat Surat sesuai standar administrasi.
+   - Membuat ringkasan padat isi surat secara otomatis untuk memudahkan proses disposisi pimpinan.
+3. **Ekspor Satu Klik ke Microsoft Excel (`.xlsx`):**
+   - Menghasilkan file spreadsheet terstruktur yang langsung siap digunakan untuk pelaporan maupun audit.
+
+## 🛠️ Teknologi yang Digunakan
+- **Antarmuka Web (Frontend):** Python, Streamlit
+- **Mesin AI Vision:** Groq API (`qwen/qwen3.8-27b`)
+- **Pengolahan Data & Spreadsheet:** Pandas, OpenPyXL
+
+---
+
+## 👤 Tentang Pembuat
+**Dava Iman Condro Kuncoro**  
+Lulusan D3 Manajemen Administrasi & Mahasiswa S1 Ilmu Administrasi Bisnis dengan pengalaman lebih dari 4 tahun sebagai *Customer Service Officer* di industri perbankan. Tertarik pada efisiensi operasional bisnis dan penerapan otomasi AI dalam administrasi perkantoran.
