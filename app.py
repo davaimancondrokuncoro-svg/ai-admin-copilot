@@ -1,54 +1,42 @@
 import streamlit as st
-from google import genai
-from google.genai import types
+from groq import Groq
 import pandas as pd
 import json
 import io
+import base64
 
 st.set_page_config(page_title="AI Admin Copilot", page_icon="🗂️", layout="wide")
 
 st.title("🗂️ AI Admin Copilot")
 st.write("Asisten cerdas untuk merapikan data struk belanja, invoice, dan surat masuk secara otomatis.")
 
-# Mengambil API Key dan memasang batas waktu maksimal 15 detik agar tidak loading lama
 try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-    client = genai.Client(api_key=api_key, http_options={"timeout": 15000})
+    api_key = st.secrets["GROQ_API_KEY"]
+    client = Groq(api_key=api_key)
 except Exception:
-    st.error("⚠️ API Key Gemini belum dipasang. Silakan masukkan di pengaturan Secrets Streamlit.")
+    st.error("⚠️ API Key Groq belum dipasang. Silakan masukkan di pengaturan Secrets Streamlit.")
     st.stop()
 
-def proses_dengan_ai(file_bytes, mime_type, prompt, status_box):
-    # Mencari otomatis daftar model yang aktif & mendukung pembacaan gambar/dokumen di akun Anda
-    model_aktif = ["gemini-3.8-flash"]
-    try:
-        for m in client.models.list():
-            if "gemini" in m.name and "flash" in m.name and "lite" not in m.name:
-                nama_bersih = m.name.replace("models/", "")
-                if nama_bersih not in model_aktif:
-                    model_aktif.append(nama_bersih)
-    except Exception:
-        pass
-
-    error_terakhir = ""
-    for model_name in model_aktif[:3]:
-        status_box.write(f"🔄 Mencoba membaca dokumen dengan otak AI: **{model_name}**...")
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=[
-                    types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
-                    prompt
+def proses_gambar_dengan_ai(file_bytes, mime_type, prompt):
+    base64_image = base64.b64encode(file_bytes).decode("utf-8")
+    response = client.chat.completions.create(
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime_type};base64,{base64_image}"},
+                    },
                 ],
-                config=types.GenerateContentConfig(response_mime_type="application/json")
-            )
-            return json.loads(response.text)
-        except Exception as e:
-            error_terakhir = str(e)
-            status_box.write(f"⚠️ {model_name} sedang sibuk/tidak tersedia, beralih...")
-            continue
-
-    raise Exception(error_terakhir)
+            }
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.1,
+    )
+    return json.loads(response.choices[0].message.content)
 
 tab1, tab2 = st.tabs(["🧾 Laporan Keuangan (Struk & Invoice)", "📩 Buku Agenda Surat Masuk"])
 
@@ -57,14 +45,14 @@ with tab1:
     st.subheader("Ekstrak Data Struk Belanja & Faktur")
     uploaded_files = st.file_uploader(
         "Unggah foto struk atau invoice (bisa pilih lebih dari 1 file sekaligus)", 
-        type=["jpg", "jpeg", "png", "pdf"], 
+        type=["jpg", "jpeg", "png"], 
         accept_multiple_files=True,
         key="keuangan"
     )
     
     if uploaded_files and st.button("Proses Dokumen Keuangan", type="primary"):
         hasil_keuangan = []
-        with st.status("Memulai proses AI...", expanded=True) as status_box:
+        with st.spinner("AI sedang membaca dan merapikan data..."):
             for file in uploaded_files:
                 file_bytes = file.read()
                 mime_type = file.type
@@ -78,16 +66,15 @@ with tab1:
                     "Kategori": "Pilih satu: Konsumsi, ATK, Transportasi, Operasional, atau Lainnya",
                     "Total_Nominal": 0
                 }
-                Pastikan Total_Nominal hanya berupa angka tanpa titik, koma, atau Rp. Hanya kembalikan JSON murni tanpa teks tambahan.
+                Pastikan Total_Nominal hanya berupa angka tanpa titik, koma, atau Rp.
                 """
                 
                 try:
-                    data = proses_dengan_ai(file_bytes, mime_type, prompt, status_box)
+                    data = proses_gambar_dengan_ai(file_bytes, mime_type, prompt)
                     data["Nama_File"] = file.name
                     hasil_keuangan.append(data)
                 except Exception as e:
                     st.warning(f"Gagal memproses {file.name}: {e}")
-            status_box.update(label="Proses selesai!", state="complete", expanded=False)
                     
         if hasil_keuangan:
             df = pd.DataFrame(hasil_keuangan)
@@ -109,15 +96,15 @@ with tab1:
 with tab2:
     st.subheader("Rekapitulasi Buku Agenda Surat Masuk")
     uploaded_letters = st.file_uploader(
-        "Unggah scan atau PDF surat masuk", 
-        type=["jpg", "jpeg", "png", "pdf"], 
+        "Unggah foto/scan surat masuk", 
+        type=["jpg", "jpeg", "png"], 
         accept_multiple_files=True,
         key="surat"
     )
     
     if uploaded_letters and st.button("Proses Surat Masuk", type="primary"):
         hasil_surat = []
-        with st.status("Memulai proses AI...", expanded=True) as status_box:
+        with st.spinner("AI sedang menganalisis isi surat..."):
             for file in uploaded_letters:
                 file_bytes = file.read()
                 mime_type = file.type
@@ -131,16 +118,14 @@ with tab2:
                     "Perihal": "Subjek atau perihal surat",
                     "Ringkasan_Isi": "Ringkasan singkat isi surat dalam 1-2 kalimat"
                 }
-                Hanya kembalikan JSON murni tanpa teks tambahan.
                 """
                 
                 try:
-                    data = proses_dengan_ai(file_bytes, mime_type, prompt, status_box)
+                    data = proses_gambar_dengan_ai(file_bytes, mime_type, prompt)
                     data["Nama_File"] = file.name
                     hasil_surat.append(data)
                 except Exception as e:
                     st.warning(f"Gagal memproses {file.name}: {e}")
-            status_box.update(label="Proses selesai!", state="complete", expanded=False)
                     
         if hasil_surat:
             df_surat = pd.DataFrame(hasil_surat)
