@@ -38,11 +38,11 @@ def proses_gambar_dengan_ai(file_bytes, mime_type, prompt):
     )
     return json.loads(response.choices[0].message.content)
 
-tab1, tab2 = st.tabs(["🧾 Laporan Keuangan (Struk & Invoice)", "📩 Buku Agenda Surat Masuk"])
+tab1, tab2 = st.tabs(["🧾 Laporan Keuangan (Rincian Barang)", "📩 Buku Agenda Surat Masuk"])
 
-# --- TAB 1: STRUK & INVOICE ---
+# --- TAB 1: STRUK & INVOICE (RINCIAN PER ITEM) ---
 with tab1:
-    st.subheader("Ekstrak Data Struk Belanja & Faktur")
+    st.subheader("Ekstrak Rincian Barang Struk Belanja & Faktur")
     uploaded_files = st.file_uploader(
         "Unggah foto struk atau invoice (bisa pilih lebih dari 1 file sekaligus)", 
         type=["jpg", "jpeg", "png"], 
@@ -52,43 +52,54 @@ with tab1:
     
     if uploaded_files and st.button("Proses Dokumen Keuangan", type="primary"):
         hasil_keuangan = []
-        with st.spinner("AI sedang membaca dan merapikan data..."):
+        with st.spinner("AI sedang membaca setiap baris barang..."):
             for file in uploaded_files:
                 file_bytes = file.read()
                 mime_type = file.type
                 
                 prompt = """
-                Baca dokumen struk belanja atau invoice ini. Ekstrak informasinya ke dalam format JSON dengan kunci persis seperti berikut:
+                Baca seluruh rincian barang pada struk belanja atau invoice ini.
+                Kembalikan dalam format JSON dengan kunci "items" berisi daftar (list) setiap barang yang dibeli:
                 {
-                    "Tanggal": "YYYY-MM-DD (jika tidak ada isi '-')",
-                    "Nama_Vendor": "Nama toko/perusahaan",
-                    "Nomor_Dokumen": "Nomor struk/invoice (jika tidak ada isi '-')",
-                    "Kategori": "Pilih satu: Konsumsi, ATK, Transportasi, Operasional, atau Lainnya",
-                    "Total_Nominal": 0
+                    "items": [
+                        {
+                            "Tanggal": "YYYY-MM-DD (jika tidak ada isi '-')",
+                            "Nama_Vendor": "Nama toko/perusahaan",
+                            "Nomor_Dokumen": "Nomor struk/invoice (jika tidak ada isi '-')",
+                            "Nama_Barang": "Nama item barang",
+                            "Qty": 0,
+                            "Satuan": "Kg / Pcs / Box / Klg / dll",
+                            "Harga_Satuan": 0,
+                            "Subtotal_Barang": 0,
+                            "Kategori": "Pilih satu: Konsumsi, ATK, Transportasi, Operasional, atau Lainnya"
+                        }
+                    ]
                 }
-                Pastikan Total_Nominal hanya berupa angka tanpa titik, koma, atau Rp.
+                Pastikan Qty, Harga_Satuan, dan Subtotal_Barang hanya berupa angka murni tanpa titik, koma, atau Rp.
                 """
                 
                 try:
-                    data = proses_gambar_dengan_ai(file_bytes, mime_type, prompt)
-                    data["Nama_File"] = file.name
-                    hasil_keuangan.append(data)
+                    respon_json = proses_gambar_dengan_ai(file_bytes, mime_type, prompt)
+                    daftar_barang = respon_json.get("items", [])
+                    for item in daftar_barang:
+                        item["Nama_File"] = file.name
+                        hasil_keuangan.append(item)
                 except Exception as e:
                     st.warning(f"Gagal memproses {file.name}: {e}")
                     
         if hasil_keuangan:
             df = pd.DataFrame(hasil_keuangan)
-            st.success("✅ Data berhasil dirapikan!")
+            st.success(f"✅ Berhasil mengekstrak {len(df)} baris item belanja!")
             st.dataframe(df, use_container_width=True)
             
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Laporan_Keuangan')
+                df.to_excel(writer, index=False, sheet_name='Rincian_Belanja')
             
             st.download_button(
-                label="📥 Download Laporan Excel (.xlsx)",
+                label="📥 Download Laporan Rincian Excel (.xlsx)",
                 data=buffer.getvalue(),
-                file_name="Laporan_Keuangan_Admin.xlsx",
+                file_name="Laporan_Rincian_Belanja_Admin.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
