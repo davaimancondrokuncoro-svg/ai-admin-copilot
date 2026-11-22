@@ -216,3 +216,14 @@ with tab2:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
+# --- FOOTER ---
+st.markdown(
+    """
+    <hr style="margin-top: 3rem; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(150, 150, 150, 0.2);">
+    <div style="text-align: center; color: gray; font-size: 0.85rem; padding-bottom: 1rem;">
+        <strong>AI Admin Copilot v1.0 (Public Beta)</strong> • Dikembangkan oleh Dava Iman C. K.<br>
+        <span style="font-size: 0.78rem;">Fitur dan akurasi ekstraksi dokumen terus ditingkatkan secara berkala.</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
